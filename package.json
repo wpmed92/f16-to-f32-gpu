@@ -1,0 +1,22 @@
+{
+  "name": "f16-gpu-decomp",
+  "version": "1.0.0",
+  "description": "Fast f16 to f32 decompression using WebGPU",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node test/test.js"
+  },
+  "keywords": [
+    "webgpu",
+    "gpu",
+    "decompression"
+  ],
+  "author": "Ahmed Harmouche",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "dependencies": {
+    "puppeteer": "^21.6.0"
+  }
+}

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebGPU tests</title>
+</head>
+<body>
+    <p id="testInputType"></p>
+    <p id="testSmallArrays"></p>
+    <script type="module">
+        import { decompressF16 } from "../src/index.js" 
+        window.onload = async ()=> {
+            // Test bad input failure
+            try {
+                await decompressF16(5);
+                document.getElementById("testInputType").innerText = "testInputType: FAILED";
+            } catch (error) {
+                document.getElementById("testInputType").innerText = "testInputType: " + ((error instanceof TypeError) ? "OK" : "FAILED");
+            }
+
+            function close(a, b, tolerance) {
+                return Math.abs(a-b) <= tolerance
+            }
+
+            // Test special values
+            await Promise.all([
+                { f16: 0xC000, val: -2 }, 
+                { f16: 0xBE00, val: -1.5 },
+                { f16: 0x0000, val: 0 },
+                { f16: 0x0400, val: 0.00006104 },
+                { f16: 0x3C00, val: 1 },
+                { f16: 0x0001, val: 5.96046e-8 },
+                { f16: 0x4000, val: 2 },
+                { f16: 0x7BFF, val: 65504 }
+            ].map(async (testCase) => {
+                const f32 = await decompressF16(new Uint16Array([testCase.f16, 0]));
+                return { expected: testCase.val, actual: f32[0] };
+            }))
+            .then((results) => {
+                let error = null;
+                for (let result of results) {
+                    if (!close(result.expected, result.actual, 0.0000001)) {
+                        error = "FAILED: expected: " + result.expected + ", actual: " + result.actual + "\n";
+                    }
+                }
+
+                document.getElementById("testSmallArrays").innerText = "testSmallArrays: " + ((error) ? error : "OK");
+            })
+            .catch(() => {
+                document.getElementById("testSmallArrays").innerText = "testSmallArrays: FAILED";
+            });
+        }
+    </script>
+</body>
+</html>
