@@ -1,6 +1,6 @@
 {
-  "name": "f16-gpu-decomp",
-  "version": "1.0.0",
+  "name": "f16-to-f32-gpu",
+  "version": "0.1.0",
   "description": "Fast f16 to f32 decompression using WebGPU",
   "main": "src/index.js",
   "scripts": {

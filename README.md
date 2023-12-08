@@ -5,10 +5,14 @@ Fast decompression of f16 data to f32 using WebGPU.
 ## Usage
 
 ```JavaScript
-import { decompressF16 } from "f16-gpu-decomp";
+import { f16tof32GPU } from "f16-to-f32-gpu";
 
-const decompressedF32 = await decompressF16(new Uint16Array([0xC000, 0]));
-console.log(f32[0]); // Will output -2
+try {
+    const decompressedF32 = await f16tof32GPU(new Uint16Array([0xC000]));
+    console.log(decompressedF32[0]); // -2
+} catch (error) {
+    console.log(`Error: ${error.cause}, ${error.message}`)
+}
 ```
 
 ## License

@@ -29,7 +29,7 @@ async function waitForTest(page) {
         }
 
         if (testInputType.includes("FAILED")) {
-            throw Error("Input type test failed.");
+            throw Error("Input type test failed: " + testInputType);
         }
 
         if (testSmallArrays.includes("FAILED")) {
@@ -53,6 +53,7 @@ async function runTest() {
     const ready = await waitForTest(page);
     if (!ready) throw new Error("Failed to load page");
 
+    console.log("All tests passed");
     cleanup(null);
 }
 

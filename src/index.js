@@ -42,33 +42,52 @@ const addComputePass = (device, commandEncoder, pipeline, bufs, workgroup) => {
     passEncoder.end();
 };
 
-export const decompressF16 = async(inF16InU16Array) => {
+const ErrorReason = {
+    NO_WEBGPU: "no-webgpu",
+    UNSUPPORTED_TYPE: "unsupported-type"
+};
+
+const pad = function(data) {
+    const DataType = data.constructor;
+    const padTo = (DataType == Uint8Array) ? 4 : 2;
+    const remainder = data.length % padTo;
+
+    if (remainder == 0) {
+        return data;
+    }
+
+    const padded = new DataType(data.length + remainder);
+    padded.set(data);
+    padded.set(Array(remainder).fill(0), data.length);
+    return padded;
+}
+
+const f16tof32GPU = async(data) => {
     if (!navigator || !navigator.gpu) {
-        throw new Error("WebGPU is not supported in the current environment.");
+        throw new Error("WebGPU is not supported in the current environment.", { cause: ErrorReason.NO_WEBGPU });
     }
 
-    if (!inF16InU16Array || !(inF16InU16Array instanceof Uint16Array)) {
-        throw new TypeError("Invalid input: the input array must be an instance of Uint16Array.");
+    if (!data || !(data instanceof Uint8Array || data instanceof Uint16Array)) {
+        throw new Error("Invalid input type: the input array must be of type Uint8Array or Uint16Array.", { cause: ErrorReason.UNSUPPORTED_TYPE });
     }
 
+    const paddedData = pad(data);
+    const inputUint32View = new Uint32Array(paddedData.buffer, paddedData.byteOffset, (paddedData instanceof Uint8Array) ? (paddedData.length / 4) : (paddedData.length / 2));
     const device = await (await navigator.gpu.requestAdapter()).requestDevice();
-    const f16InU32Array = new Uint32Array(inF16InU16Array.buffer, inF16InU16Array.byteOffset, inF16InU16Array.length / 2);
-
-    const input = device.createBuffer({size: inF16InU16Array.length*2, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
-    const output = device.createBuffer({size: inF16InU16Array.length*4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
-
+    const input = device.createBuffer({size: inputUint32View.length*4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
+    const output = device.createBuffer({size: inputUint32View.length*4*2, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
     const gpuWriteBuffer = device.createBuffer({size: input.size, usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.MAP_WRITE });
     const gpuReadBuffer = device.createBuffer({ size: output.size, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
     const commandEncoder = device.createCommandEncoder();
-    await gpuWriteBuffer.mapAsync(GPUMapMode.WRITE);
 
-    new Uint32Array(gpuWriteBuffer.getMappedRange()).set(f16InU32Array);
+    await gpuWriteBuffer.mapAsync(GPUMapMode.WRITE);
+    new Uint32Array(gpuWriteBuffer.getMappedRange()).set(inputUint32View);
 
     gpuWriteBuffer.unmap();
     commandEncoder.copyBufferToBuffer(gpuWriteBuffer, 0, input, 0, gpuWriteBuffer.size);
     const pipeline = await device.createComputePipelineAsync({layout: "auto", compute: { module: device.createShaderModule({ code: f16tof32 }), entryPoint: "main" }});
 
-    addComputePass(device, commandEncoder, pipeline, [input, output], [Math.ceil(inF16InU16Array.length/(2*256)), 1, 1]);
+    addComputePass(device, commandEncoder, pipeline, [input, output], [Math.ceil(inputUint32View.length/256), 1, 1]);
 
     commandEncoder.copyBufferToBuffer(output, 0, gpuReadBuffer, 0, output.size);
     const gpuCommands = commandEncoder.finish();
@@ -81,3 +100,5 @@ export const decompressF16 = async(inF16InU16Array) => {
 
     return resultBuffer;
 }
+
+export { f16tof32GPU, ErrorReason };
