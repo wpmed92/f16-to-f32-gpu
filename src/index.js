@@ -44,7 +44,8 @@ const addComputePass = (device, commandEncoder, pipeline, bufs, workgroup) => {
 
 const ErrorReason = {
     NO_WEBGPU: "no-webgpu",
-    UNSUPPORTED_TYPE: "unsupported-type"
+    UNSUPPORTED_TYPE: "unsupported-type",
+    UNALIGNED_INPUT: "unaligned-input"
 };
 
 const pad = function(data) {
@@ -69,6 +70,10 @@ const f16tof32GPU = async(data) => {
 
     if (!data || !(data instanceof Uint8Array || data instanceof Uint16Array)) {
         throw new Error("Invalid input type: the input array must be of type Uint8Array or Uint16Array.", { cause: ErrorReason.UNSUPPORTED_TYPE });
+    }
+
+    if (data instanceof Uint8Array && (data.length % 2) != 0) {
+        throw new Error("Input data must be 2-byte aligned", { cause: ErrorReason.UNALIGNED_INPUT });
     }
 
     const paddedData = pad(data);

@@ -16,25 +16,38 @@ function cleanup(err) {
     process.exit(0);
 }
 
+function check(test) {
+    if (test.includes("FAILED")) {
+        throw new Error(test);
+    }
+}
+
+function checkAllReady(tests) {
+    for (let test of tests) {
+        if (test === "") return false;
+    }
+
+    return true;
+}
+
 async function waitForTest(page) {
     let n = 0;
     while (n < 30) {
         const testInputType = await (await page.waitForSelector("#testInputType")).evaluate(el => el.textContent);
         const testSmallArrays = await (await page.waitForSelector("#testSmallArrays")).evaluate(el => el.textContent);
-        
-        if (testInputType == "" || testSmallArrays == "") {
+        const testUint8 = await (await page.waitForSelector("#testUint8")).evaluate(el => el.textContent);
+        const testAlignment = await (await page.waitForSelector("#testAlignment")).evaluate(el => el.textContent);
+
+        if (!checkAllReady([testInputType, testSmallArrays, testUint8, testAlignment])) {
             await timeout(1000);
             n++;
             continue;
         }
 
-        if (testInputType.includes("FAILED")) {
-            throw Error("Input type test failed: " + testInputType);
-        }
-
-        if (testSmallArrays.includes("FAILED")) {
-            throw Error("Small arrays test failed: " + testSmallArrays);
-        }
+        check(testInputType);
+        check(testSmallArrays);
+        check(testUint8);
+        check(testAlignment);
 
         return true;
     }
@@ -53,7 +66,6 @@ async function runTest() {
     const ready = await waitForTest(page);
     if (!ready) throw new Error("Failed to load page");
 
-    console.log("All tests passed");
     cleanup(null);
 }
 

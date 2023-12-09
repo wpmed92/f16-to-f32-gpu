@@ -6,6 +6,8 @@
 <body>
     <p id="testInputType"></p>
     <p id="testSmallArrays"></p>
+    <p id="testUint8"></p>
+    <p id="testAlignment"></p>
     <script type="module">
         import { f16tof32GPU, ErrorReason } from "../src/index.js" 
         window.onload = async ()=> {
@@ -48,6 +50,27 @@
             .catch((error) => {
                 document.getElementById("testSmallArrays").innerText = "testSmallArrays: FAILED, message: " + error;
             });
+
+            // Test Uint8Array input
+            try {
+                const f32 = await f16tof32GPU(new Uint8Array([0x00, 0xC0]));
+                const expected = -2
+                if (!close(f32[0], expected, 0.0000001)) {
+                    document.getElementById("testUint8").innerText = `testUint8: FAILED, expected: ${expected}, got: ${f32[0]}`;
+                } else {
+                    document.getElementById("testUint8").innerText = "testUint8: OK";
+                }
+            } catch (error) {
+                document.getElementById("testUint8").innerText = "testUint8: FAILED, message: " + error;
+            }
+
+            // Test unaligned input
+            try {
+                const f32 = await f16tof32GPU(new Uint8Array([0x00, 0xC0, 0x10]));
+                document.getElementById("testAlignment").innerText = "testAlignment: FAILED: input was expected to be unaligned, but was detected as aligned.";
+            } catch (error) {
+                document.getElementById("testAlignment").innerText = "testAlignment: " + ((error.cause == ErrorReason.UNALIGNED_INPUT) ? "OK" : "FAILED");
+            }
         }
     </script>
 </body>
