@@ -6,7 +6,7 @@
 <body>
     <p id="testInputType"></p>
     <p id="testSmallArrays"></p>
-    <p id="testUint8"></p>
+    <p id="testAllDataTypes"></p>
     <p id="testAlignment"></p>
     <script type="module">
         import { f16tof32GPU, ErrorReason } from "../src/index.js" 
@@ -51,15 +51,26 @@
                 document.getElementById("testSmallArrays").innerText = "testSmallArrays: FAILED, message: " + error;
             });
 
-            // Test Uint8Array input
+            // Test supported data types
             try {
-                const f32 = await f16tof32GPU(new Uint8Array([0x00, 0xC0]));
-                const expected = -2
-                if (!close(f32[0], expected, 0.0000001)) {
-                    document.getElementById("testUint8").innerText = `testUint8: FAILED, expected: ${expected}, got: ${f32[0]}`;
-                } else {
-                    document.getElementById("testUint8").innerText = "testUint8: OK";
+                const f32fromU8 = { val: await f16tof32GPU(new Uint8Array([0x00, 0xC0])), expected: -2 };
+                const f32fromU16 = { val: await f16tof32GPU(new Uint16Array([0xC000])), expected: -2 };
+                const f32fromU32 = { val: await f16tof32GPU(new Uint32Array([0xBE00C000])), expected: [-2, -1.5]};
+
+                let error = "";
+
+                if (!close(f32fromU8.val[0], f32fromU8.expected, 0.0000001)) {
+                    error += `testAllDataTypes: FAILED Uint8Array: expected: ${f32fromU8.expected}, got: ${f32fromU8.val[0]}`;
+                    error = true;
                 }
+                if (!close(f32fromU16.val[0], f32fromU16.expected, 0.0000001)) {
+                    error += `testAllDataTypes: FAILED Uint16Array: expected: ${f32fromU16.expected}, got: ${f32fromU16.val[0]}`;
+                }
+                if (!(close(f32fromU32.val[0], f32fromU32.expected[0], 0.0000001) || close(f32fromU32.val[1], f32fromU32.expected[1], 0.0000001))) {
+                    error += `testAllDataTypes: FAILED Uint32Array: expected: ${f32fromU32.expected}, got: ${f32fromU32.val}`;
+                }
+
+                document.getElementById("testAllDataTypes").innerText = (error != "") ? error : "testAllDataTypes: OK";
             } catch (error) {
                 document.getElementById("testUint8").innerText = "testUint8: FAILED, message: " + error;
             }

@@ -48,7 +48,7 @@ const ErrorReason = {
     UNALIGNED_INPUT: "unaligned-input"
 };
 
-const pad = function(data) {
+const align4 = function(data) {
     const DataType = data.constructor;
     const padTo = (DataType == Uint8Array) ? 4 : 2;
     const remainder = data.length % padTo;
@@ -63,12 +63,13 @@ const pad = function(data) {
     return padded;
 }
 
+
 const f16tof32GPU = async(data) => {
     if (!navigator || !navigator.gpu) {
         throw new Error("WebGPU is not supported in the current environment.", { cause: ErrorReason.NO_WEBGPU });
     }
 
-    if (!data || !(data instanceof Uint8Array || data instanceof Uint16Array)) {
+    if (!data || !(data instanceof Uint8Array || data instanceof Uint16Array || data instanceof Uint32Array)) {
         throw new Error("Invalid input type: the input array must be of type Uint8Array or Uint16Array.", { cause: ErrorReason.UNSUPPORTED_TYPE });
     }
 
@@ -76,8 +77,18 @@ const f16tof32GPU = async(data) => {
         throw new Error("Input data must be 2-byte aligned", { cause: ErrorReason.UNALIGNED_INPUT });
     }
 
-    const paddedData = pad(data);
-    const inputUint32View = new Uint32Array(paddedData.buffer, paddedData.byteOffset, (paddedData instanceof Uint8Array) ? (paddedData.length / 4) : (paddedData.length / 2));
+    let inputUint32View;
+    let alignmentNeeded = false;
+
+    // Already 4-byte aligned
+    if (data instanceof Uint32Array) {
+        inputUint32View = data;
+    } else {
+        alignmentNeeded = true;
+        const alignedData = align4(data);
+        inputUint32View = new Uint32Array(alignedData.buffer, alignedData.byteOffset, (alignedData instanceof Uint8Array) ? (alignedData.length / 4) : (alignedData.length / 2));
+    }
+
     const device = await (await navigator.gpu.requestAdapter()).requestDevice();
     const input = device.createBuffer({size: inputUint32View.length*4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
     const output = device.createBuffer({size: inputUint32View.length*4*2, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
@@ -103,7 +114,7 @@ const f16tof32GPU = async(data) => {
     resultBuffer.set(new Float32Array(gpuReadBuffer.getMappedRange()));
     gpuReadBuffer.unmap();
 
-    return resultBuffer;
+    return (alignmentNeeded) ? resultBuffer.subarray(0, resultBuffer.length-1) : resultBuffer;
 }
 
 export { f16tof32GPU, ErrorReason };

@@ -35,10 +35,10 @@ async function waitForTest(page) {
     while (n < 30) {
         const testInputType = await (await page.waitForSelector("#testInputType")).evaluate(el => el.textContent);
         const testSmallArrays = await (await page.waitForSelector("#testSmallArrays")).evaluate(el => el.textContent);
-        const testUint8 = await (await page.waitForSelector("#testUint8")).evaluate(el => el.textContent);
+        const testAllDataTypes = await (await page.waitForSelector("#testAllDataTypes")).evaluate(el => el.textContent);
         const testAlignment = await (await page.waitForSelector("#testAlignment")).evaluate(el => el.textContent);
 
-        if (!checkAllReady([testInputType, testSmallArrays, testUint8, testAlignment])) {
+        if (!checkAllReady([testInputType, testSmallArrays, testAllDataTypes, testAlignment])) {
             await timeout(1000);
             n++;
             continue;
@@ -46,7 +46,7 @@ async function waitForTest(page) {
 
         check(testInputType);
         check(testSmallArrays);
-        check(testUint8);
+        check(testAllDataTypes);
         check(testAlignment);
 
         return true;
