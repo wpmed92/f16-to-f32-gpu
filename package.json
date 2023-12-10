@@ -14,9 +14,6 @@
   "author": "Ahmed Harmouche",
   "license": "MIT",
   "devDependencies": {
-    "jest": "^29.7.0"
-  },
-  "dependencies": {
     "puppeteer": "^21.6.0"
   }
 }
