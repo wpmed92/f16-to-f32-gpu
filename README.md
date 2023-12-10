@@ -1,5 +1,5 @@
 # f16-to-f32-gpu
-
+[![Unit Tests](https://github.com/wpmed92/f16-to-f32-gpu/actions/workflows/test.yml/badge.svg)](https://github.com/wpmed92/f16-to-f32-gpu/actions/workflows/test.yml)<br>
 This project's goal is to allow fast decompression of large half-float arrays to `Float32Array` in JavaScript. Since half-precision floating point arrays are not natively supported in JavaScript, decoding float16 data, and doing it fast, is challenging. CPU-based solutions are slow, so we utilize WebGPU to process values in parallel on the GPU.
 
 ## Usage

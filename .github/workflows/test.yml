@@ -1,4 +1,4 @@
-name: Run NPM Tests
+name: Unit Tests
 
 on:
   push:
