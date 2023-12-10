@@ -6,7 +6,7 @@ This project's goal is to allow fast decompression of large half-float arrays to
 
 The following input types are supported: `Uint8Array`, `Uint16Array`, `Uint32Array`
 Passing any other type will result in a `ErrorReason.UNSUPPORTED_TYPE` error.
-When passing in `Uint8Array`, the data has to be 2-byte aligned, otherwise an `ErrorReason.UNALIGNED_INPUT` will be raised.
+The input data has to be 2-byte aligned, otherwise an `ErrorReason.UNALIGNED_INPUT` will be raised.
 Internally, we view the input data as `Uint32Array`, so we perform 4-byte alignment when needed. By doing this, we can decode two half-float values in a single kernel invocation. (the lower, and upper 16 bits of the input `u32` value are decoded to `f32`)
 
 ```JavaScript

@@ -70,7 +70,7 @@ const f16tof32GPU = async(data) => {
     }
 
     if (!data || !(data instanceof Uint8Array || data instanceof Uint16Array || data instanceof Uint32Array)) {
-        throw new Error("Invalid input type: the input array must be of type Uint8Array or Uint16Array.", { cause: ErrorReason.UNSUPPORTED_TYPE });
+        throw new Error("Invalid input type: the input array must be of type Uint8Array, Uint16Array or Uint32Array", { cause: ErrorReason.UNSUPPORTED_TYPE });
     }
 
     if (data instanceof Uint8Array && (data.length % 2) != 0) {
